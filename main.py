@@ -11,14 +11,20 @@ energies and lengths, respectively.
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import eigsh
-from PIL import Image, ImageDraw
+import time
+import matplotlib.pyplot as plt
+
 
 def hoti_hamiltonian_square(n, dn):
     """Generate hoti Hamiltonian for square (simplest implementation). Effectively this hamiltonian is written in the
     basis s_kron_y_kron_x with s, y and x labeling the spinor and spatial components.
     :param n: dimension of nxn domain
     :param dn: discretization param
+    :returns: 
     """
+    current_time = time.strftime("%H:%M:%S", time.localtime())
+    print(f"Beginning hoti_hamiltonian_square -> current time: {current_time}")
+    t1 = time.time()
     # Constants
     mu = 1
     beta = 1
@@ -35,63 +41,77 @@ def hoti_hamiltonian_square(n, dn):
          + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), -1j * sp.kronsum(d1, d1))
          + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d1, -d1)))
 
+    # End
+    t2 = time.time()
+    print(f"\tFinished -> time elapsed: {t2-t1} s")
     return h
 
-def hoti_hamiltonian_rect(nx, ny, dn):
-    """Generate hoti Hamiltonian for square (simplest implementation). Effectively this hamiltonian is written in the
-    basis s_kron_y_kron_x with s, y and x labeling the spinor and spatial components.
-    :param n: dimension of nxn domain
-    :param dn: discretization param
+
+def gen_equipoly(no_vert, side_len, alpha=0):
+    """Generate coordinates of verticies describing equilateral polygon
+    :param no_vert: number of verticies
+    :param side_len: side length
+    :param alpha: angle of rotation, zero defines polygon with one edge aligned with x axis
     """
-    # Constants
-    mu = 1
-    beta = 1
-    # Differential operators, d1 and d2
-    diagx = np.ones(nx)
-    diags1x= np.array([diagx, -diagx]) / dn
-    d1x = sp.spdiags(diags1x, (1, -1))
-    diags2x = np.array([diagx, -2 * diagx, diagx]) / dn ** 2
-    d2x = sp.spdiags(diags2x, (1, 0, -1))
+    # Exception
+    if no_vert < 3:
+        raise Exception("A polygon must have at least 3 verticies.")
 
-    diagy = np.ones(n)
-    diags1y = np.array([diagy, -diagy]) / dn
-    d1y = sp.spdiags(diags1y, (1, -1))
-    diags2y = np.array([diagy, -2 * diagy, diagy]) / dn ** 2
-    d2y = sp.spdiags(diags2y, (1, 0, -1))
+    # Initialise returned variable, [x1, y1, x2, y2...]
+    vert = np.zeros(2 * no_vert)
 
-    # Hamiltonian
-    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(nx*ny) + sp.kronsum(d2y, d2x)))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), -1j * sp.kronsum(-d1y, d1x))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), -1j * sp.kronsum(d1y, d1x))
-         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d1y, -d1x)))
+    # Generate coords
+    theta = 360 / no_vert
+    for i in np.arange(no_vert - 1):
+        vert[2 + 2 * i] += (vert[2 * i]
+                            + side_len * np.cos(theta * i + alpha))  # X
+        vert[3 + 2 * i] += (vert[1 + 2 * i]
+                            + side_len * np.sin(theta * i + alpha))  # y
 
-    return h
+    # Shift into +ve quadrant
+    x_shift = min(vert[::2])
+    y_shift = min(vert[1::2])
+    vert[::2] = vert[::2] - x_shift
+    vert[1::2] = vert[1::2] - y_shift
 
-def hoti_hamiltonian_equilat_polygon(verticies, dn, v):
-    """Create h describing the smallest square (might change so that it implements smallest rect) that fits polygon.
-       Create mask and apply to h (apply bc's).
-       :param verticies:  [x1,y1,x2,y2,...]
-       :param dn: discretization param
-       """
-    # Along the x and y directions calculate the largest distance
-    x = verticies[::2]
-    y = verticies[1::2]
-    n = max(max(x) - min(x), max(y) - min(y))
-    # Create h for square
-    h = hoti_hamiltonian_square(n, dn)
-    # Create mask
-    img = Image.new('L', (n, n), 0)
-    ImageDraw.Draw(img).polygon(verticies, outline=1, fill=1)
-    mask = np.array(img).flatten()
-    zero = np.zeros(n**2)
-    for i in np.arange(0, n**2):
-        if not mask[i]:
-            h[i,:] = zero
-            h[i,i::n**2] = v
-    return h
+    return vert
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    h = hoti_hamiltonian_square(100, 0.1)
-
-    np.savetxt("foo.csv", a, delimiter=",")
+    n = 100
+    h = hoti_hamiltonian_square(n, 0.1)
+    
+    # Eigen-problem solver
+    current_time = time.strftime("%H:%M:%S", time.localtime())
+    t1 = time.time()
+    print(f"Beginning eigsh -> current time: {current_time}")
+    eigenvalues, eigenvectors = eigsh(h, which='SM')
+    t2 = time.time()
+    print(f"\tFinished -> time elapsed: {t2-t1} s")
+    
+    
+    # Normalise probability density
+    wfs = np.transpose(eigenvectors)
+    norm = np.sum(wfs, axis=1)
+    wfs_normalised = np.divide(wfs, norm)
+    no_eigen = np.shape(wfs_normalised)[0]
+    p = np.sum(np.reshape(wfs_normalised, (no_eigen, n**2, 4)),axis=2)
+    
+    # Normalise probability density
+    # wf = eigenvectors[:,1].flatten() 
+    # norm = np.sum(abs(wf)**2)
+    # p = np.sum(np.reshape(abs(wf)**2, (4, n**2)) / norm, axis=0)
+    # p = np.reshape(p, (n,n))
+    
+    # Save
+    for i in np.arange(no_eigen):    
+        np.savetxt(f"{n}x{n}square_{i}.csv", np.reshape(p[i], (n, n)), delimiter=",")
+    
+    # Plot
+    fig, ax = plt.subplots()
+    im = ax.imshow(np.reshape(p[0], (n, n)))
+    fig.colorbar(im, ax=ax, label='Interactive colorbar')
+    plt.show()
+    
+    
