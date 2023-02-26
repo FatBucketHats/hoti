@@ -159,18 +159,17 @@ def hoti_hamiltonian_rect(verticies, dn):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    L = 15*R0
-    dn = 0.5*R0
+    L = 40*R0
+    dn = 0.2*R0
     
     n = int(L/dn)
-    n = 4
     h = hoti_hamiltonian_square(n, dn)
     
     # Eigen-problem solver
     current_time = time.strftime("%H:%M:%S", time.localtime())
     t1 = time.time()
     print(f"Beginning eigsh -> current time: {current_time}")
-    eigenvalues, eigenvectors = eigsh(h, which='SM')
+    eigenvalues, eigenvectors = eigsh(h, sigma=0.0000001, which='LM')
     t2 = time.time()
     print(f"\tFinished -> time elapsed: {t2-t1} s")
     
