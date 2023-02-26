@@ -13,7 +13,16 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import eigsh
 import time
 import matplotlib.pyplot as plt
+import math
+from PIL import Image, ImageDraw
 
+# Bi2Te3
+A=4.003; m0=-0.296; m2=177.355; B=0.9
+ 
+# Global constants
+MU = m2*abs(m0)/(A**2)
+BETA = B*abs(m0)/(A**2)
+R0 = A/abs(m0)
 
 def hoti_hamiltonian_square(n, dn):
     """Generate hoti Hamiltonian for square (simplest implementation). Effectively this hamiltonian is written in the
@@ -26,8 +35,8 @@ def hoti_hamiltonian_square(n, dn):
     print(f"Beginning hoti_hamiltonian_square -> current time: {current_time}")
     t1 = time.time()
     # Constants
-    mu = 1
-    beta = 1
+    mu = MU
+    beta = BETA
     # Differential operators, d1 and d2
     diag = np.ones(n)
     diags1 = np.array([diag, -diag]) / dn
@@ -36,10 +45,10 @@ def hoti_hamiltonian_square(n, dn):
     d2 = sp.spdiags(diags2, (1, 0, -1))
 
     # Hamiltonian
-    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + sp.kronsum(d2, d2)))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), -1j * sp.kronsum(-d1, d1))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), -1j * sp.kronsum(d1, d1))
-         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d1, -d1)))
+    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + mu*sp.kronsum(d2, d2)))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-d1, -1j*d1))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), -1j * sp.kronsum(d1, -1j*d1))
+         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d2, -d2)))
 
     # End
     t2 = time.time()
@@ -76,11 +85,54 @@ def gen_equipoly(no_vert, side_len, alpha=0):
 
     return vert
 
+def hoti_hamiltonian_rect(verticies, dn):
+    """Create h describing the smallest rectangle that fits polygon.
+       Create mask and apply to h (apply bc's).
+       :param verticies:  [x1,y1,x2,y2,...]
+       :param dn: discretization param
+       """
+    # Constants
+    mu = MU
+    beta = BETA
+    
+    # Calculate nx, ny
+    nx = math.ceil(max(verticies[::2])/dn)
+    ny = math.ceil(max(verticies[1::2])/dn)
+    
+    # Differential operators, d1 and d2
+    diagx = np.ones(nx)
+    diags1x = np.array([diagx, -diagx]) / dn
+    d1x = sp.spdiags(diags1x, (1, -1))
+    diags2x = np.array([diagx, -2 * diagx, diagx]) / dn ** 2
+    d2x = sp.spdiags(diags2x, (1, 0, -1))
+
+    diagy = np.ones(n)
+    diags1y = np.array([diagy, -diagy]) / dn
+    d1y = sp.spdiags(diags1y, (1, -1))
+    diags2y = np.array([diagy, -2 * diagy, diagy]) / dn ** 2
+    d2y = sp.spdiags(diags2y, (1, 0, -1))
+
+    # Hamiltonian
+    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(nx * ny) + mu*sp.kronsum(d2y, d2x)))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), sp.kronsum(-d1y, -1j*d1x))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), sp.kronsum(d1y, 1j*d1x))
+         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d2y, -d2x)))
+    
+    # Mask
+    img = Image.new('L', (ny, nx), 0)
+    ImageDraw.Draw(img).polygon(verticies, outline=1, fill=1)
+    mask = np.array(img).flatten()
+    zero = np.zeros(n ** 2)
+
+    return h
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    n = 100
-    h = hoti_hamiltonian_square(n, 0.1)
+    L = 15
+    dn = 0.2
+    n = int(L/dn)
+    h = hoti_hamiltonian_square(n, dn)
     
     # Eigen-problem solver
     current_time = time.strftime("%H:%M:%S", time.localtime())
@@ -93,10 +145,10 @@ if __name__ == '__main__':
     
     # Normalise probability density
     wfs = np.transpose(eigenvectors)
-    norm = np.sum(wfs, axis=1)
-    wfs_normalised = np.divide(wfs, norm)
+    norm = np.sum(abs(wfs), axis=1, keepdims=1)
+    wfs_normalised = wfs/norm
     no_eigen = np.shape(wfs_normalised)[0]
-    p = np.sum(np.reshape(wfs_normalised, (no_eigen, n**2, 4)),axis=2)
+    p = np.sum(np.reshape(abs(wfs_normalised)**2, (no_eigen, n**2, 4)),axis=2)
     
     # Normalise probability density
     # wf = eigenvectors[:,1].flatten() 
