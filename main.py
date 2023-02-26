@@ -24,7 +24,7 @@ MU = m2*abs(m0)/(A**2)
 BETA = B*abs(m0)/(A**2)
 R0 = A/abs(m0)
 
-def hoti_hamiltonian_square(n, dn):
+def hoti_hamiltonian_square_unitless(n, dn):
     """Generate hoti Hamiltonian for square (simplest implementation). Effectively this hamiltonian is written in the
     basis s_kron_y_kron_x with s, y and x labeling the spinor and spatial components.
     :param n: dimension of nxn domain
@@ -34,7 +34,7 @@ def hoti_hamiltonian_square(n, dn):
     current_time = time.strftime("%H:%M:%S", time.localtime())
     print(f"Beginning hoti_hamiltonian_square -> current time: {current_time}")
     t1 = time.time()
-    # Constants
+    # Constants 
     mu = MU
     beta = BETA
     # Differential operators, d1 and d2
@@ -47,8 +47,37 @@ def hoti_hamiltonian_square(n, dn):
     # Hamiltonian
     h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + mu*sp.kronsum(d2, d2)))
          + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-d1, -1j*d1))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), -1j * sp.kronsum(d1, -1j*d1))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  sp.kronsum(d1, -1j*d1))
          + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d2, -d2)))
+
+    # End
+    t2 = time.time()
+    print(f"\tFinished -> time elapsed: {t2-t1} s")
+    return h
+
+def hoti_hamiltonian_square(n, dn):
+    """Generate hoti Hamiltonian for square (simplest implementation). Effectively this hamiltonian is written in the
+    basis s_kron_y_kron_x with s, y and x labeling the spinor and spatial components.
+    :param n: dimension of nxn domain
+    :param dn: discretization param
+    :returns: 
+    """
+    current_time = time.strftime("%H:%M:%S", time.localtime())
+    print(f"Beginning hoti_hamiltonian_square -> current time: {current_time}")
+    t1 = time.time()
+
+    # Differential operators, d1 and d2
+    diag = np.ones(n)
+    diags1 = np.array([diag, -diag]) / dn
+    d1 = sp.spdiags(diags1, (1, -1))
+    diags2 = np.array([diag, -2 * diag, diag]) / dn ** 2
+    d2 = sp.spdiags(diags2, (1, 0, -1))
+
+    # Hamiltonian
+    h = (sp.kron(sp.diags([1, -1, 1, -1]), (m0*sp.identity(n ** 2) - m2*sp.kronsum(d2, d2)))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), A*sp.kronsum(-d1, -1j*d1))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  A*sp.kronsum(d1, -1j*d1))
+         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * B * sp.kronsum(d2, -d2)))
 
     # End
     t2 = time.time()
@@ -65,12 +94,13 @@ def gen_equipoly(no_vert, side_len, alpha=0):
     # Exception
     if no_vert < 3:
         raise Exception("A polygon must have at least 3 verticies.")
-
+    
+    alpha = alpha*np.pi/180
     # Initialise returned variable, [x1, y1, x2, y2...]
     vert = np.zeros(2 * no_vert)
 
     # Generate coords
-    theta = 360 / no_vert
+    theta = (np.pi/180)*360 / no_vert
     for i in np.arange(no_vert - 1):
         vert[2 + 2 * i] += (vert[2 * i]
                             + side_len * np.cos(theta * i + alpha))  # X
@@ -129,9 +159,11 @@ def hoti_hamiltonian_rect(verticies, dn):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    L = 15
-    dn = 0.2
+    L = 15*R0
+    dn = 0.5*R0
+    
     n = int(L/dn)
+    n = 4
     h = hoti_hamiltonian_square(n, dn)
     
     # Eigen-problem solver
@@ -148,7 +180,7 @@ if __name__ == '__main__':
     norm = np.sum(abs(wfs), axis=1, keepdims=1)
     wfs_normalised = wfs/norm
     no_eigen = np.shape(wfs_normalised)[0]
-    p = np.sum(np.reshape(abs(wfs_normalised)**2, (no_eigen, n**2, 4)),axis=2)
+    p = np.sum(np.reshape(abs(wfs_normalised)**2, (no_eigen, 4, n**2)),axis=1)
     
     # Normalise probability density
     # wf = eigenvectors[:,1].flatten() 
@@ -163,7 +195,7 @@ if __name__ == '__main__':
     # Plot
     fig, ax = plt.subplots()
     im = ax.imshow(np.reshape(p[0], (n, n)))
-    fig.colorbar(im, ax=ax, label='Interactive colorbar')
+    fig.colorbar(im, ax=ax, label='Colorbar')
     plt.show()
     
     
