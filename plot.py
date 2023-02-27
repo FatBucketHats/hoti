@@ -8,11 +8,11 @@ Created on Mon Feb 27 01:05:54 2023
 import numpy as np
 import matplotlib.pyplot as plt
 
-n=30
-i=1
+n=76
+i=5
 
 no_vert = 3
-side_len = 10
+side_len = 15
 
 
 path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"

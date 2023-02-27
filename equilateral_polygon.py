@@ -6,9 +6,12 @@ Created on Mon Feb 27 09:39:26 2023
 @author: jopo
 """
 import numpy as np
-import matplotlib.pyplot as plt
-import time
+import scipy.sparse as sp
 from scipy.sparse.linalg import eigsh
+import time
+import matplotlib.pyplot as plt
+import math
+from PIL import Image, ImageDraw
 from main import hoti_hamiltonian_rect_n as hamiltonian
 from main import gen_equipoly as equipoly
 
@@ -25,12 +28,14 @@ V = 100
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     no_vert = 3
-    side_len = 15
+    side_len = 25
     dn = 0.2
     theta = 0
     
     vert = equipoly(no_vert, side_len, dn, theta)
     nx, ny, h = hamiltonian(vert, dn)
+    
+    
     print(f"nx: {nx} \nny: {ny}")
     
     # Eigen-problem solver

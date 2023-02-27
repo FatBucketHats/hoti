@@ -25,6 +25,11 @@ BETA = B*abs(m0)/(A**2)
 R0 = A/abs(m0)
 V = 100
 
+def row_divide(b, x):
+    b.data /= np.take(x, b.indices)
+    return b
+
+
 def hoti_hamiltonian_square(n, dn):
     """Generate hoti Hamiltonian for square (simplest implementation). Effectively this hamiltonian is written in the
     basis s_kron_y_kron_x with s, y and x labeling the spinor and spatial components.
@@ -170,10 +175,11 @@ def hoti_hamiltonian_rect(vert, dn):
          + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(d2y, -d2x)))
     
     # Apply bc's
-    h = h*np.kron(np.ones((4,4)), np.tensordot(mask,mask,axes=0))
+    mask = np.tile(mask, 4)
+    h = h.multiply(mask)
     diag = 1 - mask # Flip 0's and 1's in mask
     v = diag*V 
-    np.fill_diagonal(h, np.diag(h) + np.kron(np.ones(4), v))
+    h.setdiag(h.diagonal + v)
     
     # End
     t2 = time.time()
@@ -212,7 +218,6 @@ def hoti_hamiltonian_rect_n(vert, dn):
     fig_temp, ax_temp = plt.subplots()
     im = ax_temp.imshow(mask)
     fig_temp.colorbar(im, ax=ax_temp, label='Colorbar')
-    plt.show()
     
     # Flatten mask for processing
     mask = mask.flatten()
@@ -224,13 +229,13 @@ def hoti_hamiltonian_rect_n(vert, dn):
     d1x = sp.spdiags(diags1x, (1, -1))
     diags2x = np.array([diagx, -2 * diagx, diagx]) / dn ** 2
     d2x = sp.spdiags(diags2x, (1, 0, -1))
-
+    
     diagy = np.ones(ny)
     diags1y = np.array([diagy, -diagy]) / dn
     d1y = sp.spdiags(diags1y, (1, -1))
     diags2y = np.array([diagy, -2 * diagy, diagy]) / dn ** 2
     d2y = sp.spdiags(diags2y, (1, 0, -1))
-
+    
     # Hamiltonian
     h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(nx * ny) + MU*sp.kronsum(d2y, d2x)))
          + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), sp.kronsum(-d1y, -1j*d1x))
@@ -238,7 +243,9 @@ def hoti_hamiltonian_rect_n(vert, dn):
          + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(d2y, -d2x)))
     
     # Apply bc's
-    h = h*np.kron(np.ones((4,4)), np.tensordot(mask,mask,axes=0))
+    
+    
+    h = h.toarray()*np.kron(np.ones((4,4)), np.tensordot(mask,mask,axes=0))
     diag = 1 - mask # Flip 0's and 1's in mask
     v = diag*V 
     np.fill_diagonal(h, np.diag(h) + np.kron(np.ones(4), v))
