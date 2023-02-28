@@ -17,14 +17,15 @@ import math
 from PIL import Image, ImageDraw
 
 # Bi2Te3
-A=4.003; m0=-0.296; m2=177.355; B=0.9
+A=2; m0=-1; m2=0.19; B=3
  
 # Global constants
 MU = m2*abs(m0)/(A**2)
 BETA = B*abs(m0)/(A**2)
 R0 = A/abs(m0)
 V = 100
-
+# path = "../data/"
+path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
 def row_divide(b, x):
     b.data /= np.take(x, b.indices)
     return b
@@ -40,9 +41,7 @@ def hoti_hamiltonian_square(n, dn):
     current_time = time.strftime("%H:%M:%S", time.localtime())
     print(f"Beginning hoti_hamiltonian_square -> current time: {current_time}")
     t1 = time.time()
-    # Constants 
-    mu = MU
-    beta = BETA
+
     # Differential operators, d1 and d2
     diag = np.ones(n)
     diags1 = np.array([diag, -diag]) / dn
@@ -51,10 +50,10 @@ def hoti_hamiltonian_square(n, dn):
     d2 = sp.spdiags(diags2, (1, 0, -1))
 
     # Hamiltonian
-    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + mu*sp.kronsum(d2, d2)))
+    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + MU*sp.kronsum(d2, d2)))
          + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-d1, -1j*d1))
          + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  sp.kronsum(d1, -1j*d1))
-         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * beta * sp.kronsum(d2, -d2)))
+         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(d2, -d2)))
 
     # End
     t2 = time.time()
@@ -177,9 +176,10 @@ def hoti_hamiltonian_rect(vert, dn):
     # Apply bc's
     mask = np.tile(mask, 4)
     h = h.multiply(mask)
+    h = h.multiply(np.transpose(mask))
     diag = 1 - mask # Flip 0's and 1's in mask
     v = diag*V 
-    h.setdiag(h.diagonal + v)
+    h.setdiag(h.diagonal() + v)
     
     # End
     t2 = time.time()
@@ -242,13 +242,14 @@ def hoti_hamiltonian_rect_n(vert, dn):
          + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), sp.kronsum(d1y, 1j*d1x))
          + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(d2y, -d2x)))
     
+    
     # Apply bc's
-    
-    
-    h = h.toarray()*np.kron(np.ones((4,4)), np.tensordot(mask,mask,axes=0))
+    mask = np.tile(mask, 4)
+    h = h.multiply(mask)
+    h = h.multiply(np.transpose(mask))
     diag = 1 - mask # Flip 0's and 1's in mask
     v = diag*V 
-    np.fill_diagonal(h, np.diag(h) + np.kron(np.ones(4), v))
+    h.setdiag(h.diagonal() + v)
     
     # End
     t2 = time.time()
@@ -259,8 +260,8 @@ def hoti_hamiltonian_rect_n(vert, dn):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    L = 30
-    dn = 0.2
+    L = 10
+    dn = 0.1
     
     n = int(L/dn)
     h = hoti_hamiltonian_square(n, dn)
@@ -269,7 +270,7 @@ if __name__ == '__main__':
     current_time = time.strftime("%H:%M:%S", time.localtime())
     t1 = time.time()
     print(f"Beginning eigsh -> current time: {current_time}")
-    eigenvalues, eigenvectors = eigsh(h, sigma=0.0000001, which='LM')
+    eigenvalues, eigenvectors = eigsh(h, sigma=0, which='LM')
     t2 = time.time()
     print(f"\tFinished -> time elapsed: {t2-t1} s")
     
@@ -281,19 +282,15 @@ if __name__ == '__main__':
     no_eigen = np.shape(wfs_normalised)[0]
     p = np.sum(np.reshape(abs(wfs_normalised)**2, (no_eigen, 4, n**2)),axis=1)
     
-    # Normalise probability density
-    # wf = eigenvectors[:,1].flatten() 
-    # norm = np.sum(abs(wf)**2)
-    # p = np.sum(np.reshape(abs(wf)**2, (4, n**2)) / norm, axis=0)
-    # p = np.reshape(p, (n,n))
+    print(*eigenvalues, sep='\n')
     
     # Save
     for i in np.arange(no_eigen):    
-        np.savetxt(f"{n}x{n}square_{i}.csv", np.reshape(p[i], (n, n)), delimiter=",")
+        np.savetxt(path + f"/{n}x{n}square_{i}.csv", np.reshape(p[i], (n, n)), delimiter=",")
     
     # Plot
     fig, ax = plt.subplots()
-    im = ax.imshow(np.reshape(p[0], (n, n)))
+    im = ax.imshow(np.reshape(p[0], (n, n))/max(p[0]))
     fig.colorbar(im, ax=ax, label='Colorbar')
     plt.show()
     
