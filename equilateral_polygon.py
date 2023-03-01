@@ -29,10 +29,10 @@ path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    no_vert = 3
+    no_vert = 4
     side_len = 10
-    dn = 0.25
-    theta = 60
+    dn = 0.2
+    theta = 0
     
     vert = equipoly(no_vert, side_len, dn, theta)
     # nx, ny, h = hamiltonian(vert, dn)

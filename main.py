@@ -261,7 +261,7 @@ def hoti_hamiltonian_rect_n(vert, dn):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     L = 10
-    dn = 0.1
+    dn = 0.25
     
     n = int(L/dn)
     h = hoti_hamiltonian_square(n, dn)
@@ -270,7 +270,7 @@ if __name__ == '__main__':
     current_time = time.strftime("%H:%M:%S", time.localtime())
     t1 = time.time()
     print(f"Beginning eigsh -> current time: {current_time}")
-    eigenvalues, eigenvectors = eigsh(h, sigma=0, which='LM')
+    eigenvalues, eigenvectors = eigsh(h, sigma=0, k=4, which='LM')
     t2 = time.time()
     print(f"\tFinished -> time elapsed: {t2-t1} s")
     
