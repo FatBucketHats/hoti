@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # Params
     no_vert = 4
     side_len = 10 
-    dn = 0.2
+    dn = 0.1
     theta = 0
     mode = "LM"
     buffer = 0

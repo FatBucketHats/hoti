@@ -100,7 +100,7 @@ def h_test(n, dn):
     return h
 
 def h_square_units(n, dn):
-    """Generate unscaled hoti Hamiltonian for square 
+    """Generate unscaled hoti Hamiltonian for square (NOT WORKING)
     
     Simplest implementation. Effectively this hamiltonian is written in the 
     basis s_kron_y_kron_x with s, y and x labeling the spinor and 
@@ -157,10 +157,10 @@ def h_rect(nx, ny, dn):
     d2y = sp.spdiags(diags2y, (1, 0, -1))
     
     # Hamiltonian
-    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(nx * ny) + MU*sp.kronsum(d2y, d2x)))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), sp.kronsum(-d1y, -1j*d1x))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), sp.kronsum(d1y, -1j*d1x))
-         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(d2y, -d2x)))
+    h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(nx * ny) + MU*sp.kronsum(d2x, d2y)))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]), sp.kronsum(-1j*d1x, -d1y))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]), sp.kronsum(-1j*d1x, d1y))
+         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(-d2x, d2y)))
     
     return h
 
