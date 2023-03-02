@@ -355,6 +355,8 @@ if __name__ == '__main__':
     p = np.sum(np.reshape(abs(wfs)**2, (no_eigen, 4, n, n)),axis=1)
     
     # Output
+    print(f"dn: {dn}")
+    print(f"L: {L}")
     print(*evalues, sep='\n')
     for i in np.arange(no_eigen):    
         np.savetxt(path + f"/{n}x{n}square_{i}.csv", p[i], delimiter=",")
