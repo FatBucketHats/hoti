@@ -14,13 +14,16 @@ from hotipolys import eigen_solve
 # path = "../data/"
 # path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
 
+j=0.5
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Params
-    r = 50
-    dn = 0.2
+    dn = 0.1
+    r = 30 
     mode = "LM"
     buffer = 0
+    E = j*(1/r+(1/2)*(1/r**2))
     
     # Function calls
     n, h, mask = hamiltonian(r, dn, show = True)

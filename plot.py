@@ -14,11 +14,11 @@ i=3
 no_vert = 3
 side_len = 20
 
-#path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
+path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
 #path = "../data"
 
 #typ = f"/e{no_vert}_len{side_len}_{i}.csv"
-#typ = f"/{n}x{n}square_{i}.csv"
+typ = f"/{n}x{n}square_{i}.csv"
 
 
 p = np.zeros((n,n))

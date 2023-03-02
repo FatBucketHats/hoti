@@ -19,7 +19,6 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import eigsh
 import time
 import matplotlib.pyplot as plt
-import math
 from matplotlib.path import Path
 
 # Global params for model
@@ -52,16 +51,16 @@ def h_square(n, dn):
     
     # Differential operators, d1 and d2
     diag = np.ones(n)
-    diags1 = np.array([diag, -diag]) / dn
+    diags1 = np.array([diag, -diag]) / (2*dn)
     d1 = sp.spdiags(diags1, (1, -1))
-    diags2 = np.array([diag, -2 * diag, diag]) / dn ** 2
+    diags2 = np.array([diag, -2 * diag, diag]) / (dn ** 2)
     d2 = sp.spdiags(diags2, (1, 0, -1))
 
     # Hamiltonian
     h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + MU*sp.kronsum(d2, d2)))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-d1, -1j*d1))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  sp.kronsum(d1, -1j*d1))
-         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(d2, -d2)))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-1j*d1, -d1))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  sp.kronsum(-1j*d1, d1))
+         + sp.kron(sp.diags([[1], [0, -1, 0], [0, 1, 0], [-1]], [-3, -1, 1, 3]), -1j * BETA * sp.kronsum(-d2, d2)))
 
     # End
     t2 = time.time()
@@ -85,15 +84,15 @@ def h_test(n, dn):
     
     # Differential operators, d1 and d2
     diag = np.ones(n)
-    diags1 = np.array([diag, -diag]) / dn
+    diags1 = np.array([diag, -diag]) / (2*dn)
     d1 = sp.spdiags(diags1, (1, -1))
-    diags2 = np.array([diag, -2 * diag, diag]) / dn ** 2
+    diags2 = np.array([diag, -2 * diag, diag]) / (dn ** 2)
     d2 = sp.spdiags(diags2, (1, 0, -1))
 
     # Hamiltonian
     h = (sp.kron(sp.diags([1, -1, 1, -1]), -(sp.identity(n ** 2) + MU*sp.kronsum(d2, d2)))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-d1, -1j*d1))
-         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  sp.kronsum(d1, -1j*d1)))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [1, -1]),  sp.kronsum(-1j*d1, -d1))
+         + sp.kron(sp.diags([[1, 0, 0], [0, 0, 1]], [-1, 1]),  sp.kronsum(-1j*d1, d1)))
 
     # End
     t2 = time.time()
@@ -116,7 +115,7 @@ def h_square_units(n, dn):
 
     # Differential operators, d1 and d2
     diag = np.ones(n)
-    diags1 = np.array([diag, -diag]) / dn
+    diags1 = np.array([diag, -diag]) / (2*dn)
     d1 = sp.spdiags(diags1, (1, -1))
     diags2 = np.array([diag, -2 * diag, diag]) / dn ** 2
     d2 = sp.spdiags(diags2, (1, 0, -1))
@@ -146,13 +145,13 @@ def h_rect(nx, ny, dn):
 
     # Differential operators, d1 and d2
     diagx = np.ones(nx)
-    diags1x = np.array([diagx, -diagx]) / dn
+    diags1x = np.array([diagx, -diagx]) / (2*dn)
     d1x = sp.spdiags(diags1x, (1, -1))
     diags2x = np.array([diagx, -2 * diagx, diagx]) / dn ** 2
     d2x = sp.spdiags(diags2x, (1, 0, -1))
     
     diagy = np.ones(ny)
-    diags1y = np.array([diagy, -diagy]) / dn
+    diags1y = np.array([diagy, -diagy]) / (2*dn)
     d1y = sp.spdiags(diags1y, (1, -1))
     diags2y = np.array([diagy, -2 * diagy, diagy]) / dn ** 2
     d2y = sp.spdiags(diags2y, (1, 0, -1))
@@ -343,7 +342,7 @@ if __name__ == '__main__':
     # Params
     L = 10
     dn = 0.2
-    n = int(L/dn)+1
+    n = int(L/dn)
     mode = "LM"
     
     # Setup Hamiltonian and solve

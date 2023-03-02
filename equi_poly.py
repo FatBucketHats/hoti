@@ -18,7 +18,7 @@ from hotipolys import eigen_solve
 if __name__ == '__main__':
     # Params
     no_vert = 4
-    side_len = 10
+    side_len = 10 
     dn = 0.2
     theta = 0
     mode = "LM"
