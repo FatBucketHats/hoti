@@ -341,8 +341,8 @@ def eigen_solve(h, which="SM", k=8):
 if __name__ == '__main__':
     # Params
     L = 10
-    dn = 0.2
-    n = int(L/dn)
+    dn = 0.1
+    n = int(round(L/dn))
     mode = "LM"
     
     # Setup Hamiltonian and solve

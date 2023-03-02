@@ -12,7 +12,7 @@ from hotipolys import eigen_solve
 
 
 # path = "../data/"
-# path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
+path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
 
 j=0.5
 
@@ -41,11 +41,13 @@ if __name__ == '__main__':
     evectors = evectors[sortinds]
     
     ################# Outputs #################
-    print(f"n: {n}")
+    print(f"dn: {dn}")
+    print(f"r: {r}")
+    print(f"Analytical E: {E}")
+    print("e values:")
     print(*evalues, sep='\n')
     
     # Saves
-    path = "/Users/jopo/Documents/23/work/ti/work_data/hoti_equilat_polygon"
     for i in np.arange(no_eigen):    
         np.savetxt(path+f"/circle_r{r}_{i}.csv", np.reshape(p[i], (n, n)), delimiter=",")
     
